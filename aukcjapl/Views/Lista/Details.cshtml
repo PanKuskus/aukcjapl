@@ -1,0 +1,122 @@
+﻿@model aukcjapl.Models.Lista
+
+@using Microsoft.AspNetCore.Identity
+@inject UserManager<IdentityUser> userManager
+
+@{
+    ViewData["Title"] = "Details";
+}
+
+@if (User.Identity.IsAuthenticated)
+{
+    @if (Model.Sprzedane == true)
+    {
+        @foreach (var oferta in Model.Oferty)
+        {
+            @if (oferta.Cena == Model.Cena)
+            {
+                @if (oferta.IdUzytkownika == userManager.GetUserId(User))
+                {
+                    <h5>Gratulacje, wygrałeś licytację!</h5>
+                }
+                else if (userManager.GetUserId(User) == Model.Uzytkownik.Id)
+                {
+                    <h5>@oferta.Uzytkownik.UserName wygrał licytację!</h5>
+                }
+                else
+                {
+                    <h5>Aukcja zakończona!</h5>
+                }
+            }
+        }
+    }
+}
+
+<h4 style="text-align:center">@Model.Tytul</h4>
+<div class="container" style="background-color: rgba(138, 129, 133, 0.6); margin-top: 50px; margin-bottom: 50px; padding: 20px; border-radius:10px;">
+    <div class="row">
+        <div class="col col-xs-6 col-lg-5">
+            <img src="~/Obrazy/@Model.Obraz" style="width: 100%; max-height: 60vh;" />
+        </div>
+        <div class="col col-xs-6 col-lg-7">
+            <div>@Model.Opis</div>
+            @if (User.Identity.IsAuthenticated)
+            {
+                <form asp-action="AddBid" method="post">
+                    <div>
+                        Podbij: $ <input type="number" min="@Model.Cena" step="1" name="Cena" placeholder="@Model.Cena.ToString("N2")" />
+                        <input type="hidden" name="IdUzytkownika" class="form-control" value="@userManager.GetUserId(User)" />
+                        <input type="hidden" name="IdListy" class="form-control" value="@Model.Id" />
+                        <input type="submit" class="btn btn-primary" value="Wyślij">
+                    </div>
+                </form>
+                <p>Podbito: @Model.Oferty.Count</p>
+                <br>
+                @if (userManager.GetUserId(User) == Model.Uzytkownik.Id)
+                {
+                    @foreach (var oferta in Model.Oferty)
+                    {
+                        <ul style="list-style-type: none;">
+                            @oferta.Uzytkownik.UserName bidded $@oferta.Cena.ToString("N2").
+                        </ul>
+                    }
+                }
+            }
+            else
+            {
+                <div>
+                    Podbij: $ <input type="number" min="@Model.Cena" step="1" name="Price" placeholder="@Model.Cena.ToString("N2")" />
+                    <input disabled type="submit" class="btn btn-primary">
+                </div>
+                <p>Lictyowane Oferty: @Model.Oferty.Count</p>
+            }
+
+            <div>Oferty: @Model.Uzytkownik.UserName</div>
+
+            @if (User.Identity.IsAuthenticated)
+            {
+                @if (userManager.GetUserId(User) == Model.Uzytkownik.Id)
+                {
+                    @if (Model.Sprzedane == false)
+                    {
+                        <a asp-action="CloseBidding" asp-route-id="@Model.Id">Zamknij aukcje</a>
+                    }
+
+                }
+            }
+        </div>
+    </div>
+</div>
+
+<br>
+
+@if (User.Identity.IsAuthenticated)
+{
+    <div class="container">
+        <form asp-action="AddComment" method="post">
+            <h6>Dodaj komentarz</h6>
+            <textarea class="form-control" aria-label="With textarea" name="Tekst" style="width: 40%; vertical-align:top;"></textarea>
+            <input type="hidden" name="IdUzytkownika" class="form-control" value="@userManager.GetUserId(User)" />
+            <input type="hidden" name="IdListy" class="form-control" value="@Model.Id" />
+            <input type="submit" class="btn btn-primary" style="display: inline-block; margin-top:10px;">
+        </form>
+    </div>
+}
+else
+{
+    <div class="container">
+        <h6>Dodaj komentarz</h6>
+        <textarea class="form-control" aria-label="With textarea" name="Content" style="width: 40%; vertical-align:top;"></textarea>
+        <input type="submit" disabled class="btn btn-primary" style="display: inline-block; margin-top:10px;">
+    </div>
+}
+<br>
+<div class="container">
+    <h6>Komentarze</h6>
+    @foreach (var komentarz in Model.Komentarz)
+    {
+        <div style="border:1px solid lightgray; margin: 10px; padding: 10px; border-radius: 10px; width: 40%;">
+            <p>@komentarz.Tekst - @komentarz.Uzytkownik.</p>
+        </div>
+    }
+</div>
