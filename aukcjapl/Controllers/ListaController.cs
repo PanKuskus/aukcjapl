@@ -15,17 +15,23 @@ using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Security.Claims;
 using System.Security.Cryptography;
+using Microsoft.AspNetCore.Identity;
+
+
 
 namespace aukcjapl.Controllers
 {
+    
     public class ListaController : Controller
     {
+        private readonly UserManager<IdentityUser> _userManager;
         private readonly IUslugaListy _uslugaListy;
         private readonly IWebHostEnvironment _webHostEnvironment;
         private readonly IUslugaOferta _uslugaOferta;
         private readonly IUslugaKomentarz _uslugaKomentarz;
-        public ListaController(IUslugaListy uslugaListy, IWebHostEnvironment webHostEnvironment, IUslugaOferta uslugaOferta, IUslugaKomentarz uslugaKomentarz)
+        public ListaController(IUslugaListy uslugaListy, IWebHostEnvironment webHostEnvironment, IUslugaOferta uslugaOferta, IUslugaKomentarz uslugaKomentarz, UserManager<IdentityUser> userManager)
         {
+            _userManager = userManager;
             _uslugaListy = uslugaListy;
             _webHostEnvironment = webHostEnvironment;
             _uslugaOferta = uslugaOferta;
@@ -97,6 +103,12 @@ namespace aukcjapl.Controllers
         {
             if(lista.Obraz != null)
             {
+                string idUzytkownika = _userManager.GetUserId(User);
+                if (idUzytkownika == null)
+                {
+                    return Unauthorized(); // Jeśli użytkownik nie jest zalogowany
+                }
+
                 string sciezkaDoObrazow = Path.Combine(_webHostEnvironment.WebRootPath, "Obrazy");
                 string nazwaPliku = lista.Obraz.FileName;
                 string sciezka = Path.Combine(sciezkaDoObrazow, nazwaPliku);
@@ -110,7 +122,7 @@ namespace aukcjapl.Controllers
                     Tytul = lista.Tytul,
                     Opis = lista.Opis,
                     Cena = lista.Cena,
-                    IdUzytkownika = lista.IdUzytkownika,
+                    IdUzytkownika = idUzytkownika,
                     Obraz = nazwaPliku
                 };
                 await _uslugaListy.Add(listaObj);
