@@ -16,6 +16,7 @@ using System.Runtime.CompilerServices;
 using System.Security.Claims;
 using System.Security.Cryptography;
 using Microsoft.AspNetCore.Identity;
+using System.Collections;
 
 
 
@@ -159,6 +160,48 @@ namespace aukcjapl.Controllers
         }
 
 
+
+        [HttpPost]
+        public async Task<ActionResult> AddBid(int idListy, double cena)
+        {
+            // Retrieve currently logged-in user (this is the real, authenticated user)
+            var userId = _userManager.GetUserId(User);
+
+            // Validate that the list exists and is open for bidding
+            var lista = await _uslugaListy.GetById(idListy);
+            if (lista == null)
+            {
+                // Handle not found or invalid listing
+                return NotFound();
+            }
+
+            // Create the Oferta object yourself
+            var oferta = new Oferta
+            {
+                Cena = cena,
+                IdListy = idListy,
+                IdUzytkownika = userId
+            };
+
+            // Validate the oferta via ModelState if you want
+            // or if you rely on data annotations, do:
+            if (!TryValidateModel(oferta))
+            {
+                // Return some view with validation errors
+                return BadRequest(ModelState);
+            }
+
+            // Save the bid
+            await _uslugaOferta.Add(oferta);
+
+            // Update the listing price
+            lista.Cena = cena;
+            await _uslugaListy.SaveChanges();
+
+            return View("Details", lista);
+        }
+
+        /*
         [HttpPost]
         public async Task<ActionResult> AddBid([Bind("Id, Cena, IdListy, IdUzytkownika")] Oferta oferta)
         {
@@ -172,7 +215,7 @@ namespace aukcjapl.Controllers
             
             return View("Details", lista);
         }
-
+        */
         public async Task<ActionResult> CloseBidding(int id)
         {
             var lista = await _uslugaListy.GetById(id);

@@ -45,7 +45,7 @@
                 <form asp-action="AddBid" method="post">
                     <div>
                         Podbij: $ <input type="number" min="@Model.Cena" step="1" name="Cena" placeholder="@Model.Cena.ToString("N2")" />
-                        <input type="hidden" name="IdUzytkownika" class="form-control" value="@userManager.GetUserId(User)" />
+                        @*<input type="hidden" name="IdUzytkownika" class="form-control" value="@userManager.GetUserId(User)" />*@
                         <input type="hidden" name="IdListy" class="form-control" value="@Model.Id" />
                         <input type="submit" class="btn btn-primary" value="Wyślij">
                     </div>
