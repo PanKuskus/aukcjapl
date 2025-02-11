@@ -1,52 +1,70 @@
-﻿
-@model aukcjapl.Models.ListaVM
+﻿@model aukcjapl.Models.ListaVM
 @using Microsoft.AspNetCore.Identity
 @inject UserManager<IdentityUser> userManager
 @{
     ViewData["Title"] = "Create";
 }
 
-<h2>Wystaw przedmiot</h2>
 
+
+<h2>Wystaw przedmiot</h2>
 
 <hr />
 <div class="row">
-    <div class="col-md-4">
+    <div class="col-md-6">
         <form asp-action="Create" enctype="multipart/form-data">
-            <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+            <div asp-validation-summary="ModelOnly" class="text-danger">
+                <p>Wystąpiły błędy w formularzu. Proszę poprawić zaznaczone pola.</p>
+            </div>
+
             <div class="form-group">
-                <label asp-for="Tytul" class="control-label"></label>
-                <input asp-for="Tytul" class="form-control" />
+                <label asp-for="Tytul" class="control-label">Tytuł aukcji</label>
+                <input asp-for="Tytul" class="form-control" placeholder="Podaj tytuł przedmiotu, np. iPhone 12 Pro 128GB" />
                 <span asp-validation-for="Tytul" class="text-danger"></span>
+                <small class="form-text text-muted">Wpisz nazwę przedmiotu, którą zobaczą kupujący.</small>
+
             </div>
+
             <div class="form-group">
-                <label asp-for="Opis" class="control-label"></label>
-                <input asp-for="Opis" class="form-control" />
+                <label asp-for="Opis" class="control-label">Opis przedmiotu</label>
+                <textarea asp-for="Opis" class="form-control" rows="4" placeholder="Opisz stan, specyfikację, dodatkowe informacje..."></textarea>
                 <span asp-validation-for="Opis" class="text-danger"></span>
+                <small class="form-text text-muted">Podaj szczegóły dotyczące przedmiotu, np. stan, cechy, akcesoria.</small>
+
             </div>
+
             <div class="form-group">
-                <label asp-for="Cena" class="control-label">Cena wywoławcza</label>
-                <input asp-for="Cena" class="form-control" />
-                <span asp-validation-for="Cena" class="text-danger"></span>
+                <label asp-for="Cena" class="control-label">Cena wywoławcza (PLN)</label>
+                <div class="input-group">
+                    <span class="input-group-text">PLN</span>
+                    <input asp-for="Cena" class="form-control" type="number" placeholder="Podaj cenę, np. 100.00" />
+                    <span asp-validation-for="Cena" class="text-danger"></span>
+                </div>
+                <small class="form-text text-muted">Minimalna kwota, od której rozpocznie się licytacja.</small>
+
             </div>
+
             <div class="form-group">
-                <label asp-for="Obraz" class="control-label"></label>
-                <input asp-for="Obraz" class="form-control" accept="image/*" style="width: 30%" />
+                <label asp-for="Obraz" class="control-label">Dodaj zdjęcie</label>
+                <input asp-for="Obraz" type="file" class="form-control-file" accept="image/*" />
                 <span asp-validation-for="Obraz" class="text-danger"></span>
+                <small class="form-text text-muted">Dodaj zdjęcie przedmiotu, aby zwiększyć zainteresowanie kupujących.</small>
+
             </div>
-            
-           
-            <div class="form-group">
-                <input type="submit" value="Wystaw" class="btn btn-primary" />
+
+
+            <div class="form-group mt-3">
+                <button type="submit" class="btn btn-primary">Wystaw</button>
+                <a asp-action="Index" class="btn btn-secondary">Wróć do ofert</a>
             </div>
         </form>
     </div>
 </div>
 
-<div>
-    <a asp-action="Index">Wróć do ofert</a>
-</div>
-
 @section Scripts {
-    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+
+
 }

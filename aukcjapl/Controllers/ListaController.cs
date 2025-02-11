@@ -86,12 +86,11 @@ namespace aukcjapl.Controllers
 
             return View(lista);
         }
-        
+
         // GET: Lista/Create
-        public IActionResult Create()
+        public async Task<IActionResult> Create()
         {
-            
-            return View();
+            return View(new ListaVM());
         }
         
         // POST: Lista/Create
