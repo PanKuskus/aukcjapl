@@ -164,18 +164,9 @@ namespace aukcjapl.Controllers
         [HttpPost]
         public async Task<ActionResult> AddBid(int idListy, double cena)
         {
-            // Retrieve currently logged-in user (this is the real, authenticated user)
+            // pobieranie ID uzytkownika z kontekstu
             var userId = _userManager.GetUserId(User);
 
-            // Validate that the list exists and is open for bidding
-            var lista = await _uslugaListy.GetById(idListy);
-            if (lista == null)
-            {
-                // Handle not found or invalid listing
-                return NotFound();
-            }
-
-            // Create the Oferta object yourself
             var oferta = new Oferta
             {
                 Cena = cena,
@@ -183,21 +174,41 @@ namespace aukcjapl.Controllers
                 IdUzytkownika = userId
             };
 
-            // Validate the oferta via ModelState if you want
-            // or if you rely on data annotations, do:
+            // Odczytujemy aukcji z bazy
+            var lista = await _uslugaListy.GetById(oferta.IdListy);
+            if (lista == null)
+            {
+                // aukcja o podanym IdListy nie istnieje
+                return NotFound();
+            }
+
+            
+
+            // czy oferta nie jest niższa niż obecna cena
+            if (oferta.Cena <= lista.Cena)
+            {
+                
+                ModelState.AddModelError(nameof(oferta.Cena), "Cena nie może być niższa niż aktualna cena.");
+                
+                return View("Details", lista);
+            }
+
+
+            // walidacja modelu oferta
             if (!TryValidateModel(oferta))
             {
-                // Return some view with validation errors
+                
                 return BadRequest(ModelState);
             }
 
-            // Save the bid
+            // Zapisujemy ofertę do bazy danych
             await _uslugaOferta.Add(oferta);
 
-            // Update the listing price
-            lista.Cena = cena;
+            // Aktualizujemy cenę w tabeli z aukcjami
+            lista.Cena = oferta.Cena;
             await _uslugaListy.SaveChanges();
 
+            // Na koniec wyświetlamy widok z detalami aukcji
             return View("Details", lista);
         }
 
