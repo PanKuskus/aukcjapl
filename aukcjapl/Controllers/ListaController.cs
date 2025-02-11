@@ -92,7 +92,7 @@ namespace aukcjapl.Controllers
         {
             return View(new ListaVM());
         }
-        
+
         // POST: Lista/Create
         // To protect from overposting attacks, enable the specific properties you want to bind to.
         // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
@@ -100,7 +100,7 @@ namespace aukcjapl.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create(ListaVM lista)
         {
-            if(lista.Obraz != null)
+            if (lista.Obraz != null)
             {
                 string idUzytkownika = _userManager.GetUserId(User);
                 if (idUzytkownika == null)
@@ -108,25 +108,53 @@ namespace aukcjapl.Controllers
                     return Unauthorized(); // Jeśli użytkownik nie jest zalogowany
                 }
 
-                string sciezkaDoObrazow = Path.Combine(_webHostEnvironment.WebRootPath, "Obrazy");
-                string nazwaPliku = lista.Obraz.FileName;
-                string sciezka = Path.Combine(sciezkaDoObrazow, nazwaPliku);
-                using (var plik = new FileStream(sciezka, FileMode.Create))
+               
+                var allowedExtensions = new[] { ".jpg", ".jpeg", ".png", ".gif", ".webp" };
+                var extension = Path.GetExtension(lista.Obraz.FileName).ToLower();
+
+                if (!allowedExtensions.Contains(extension))
                 {
-                    lista.Obraz.CopyTo(plik);
+                    ModelState.AddModelError("Obraz", "Nieobsługiwany format pliku. Wymagane: JPG, PNG, GIF, WEBP.");
+                    return View(lista);
                 }
 
+                if (lista.Obraz.Length > 5 * 1024 * 1024)
+                {
+                    ModelState.AddModelError("Obraz", "Plik jest za duży. Maksymalny rozmiar to 5MB.");
+                    return View(lista);
+                }
+
+                
+                string fileName = $"{Guid.NewGuid()}{extension}";
+                string uploadPath = Path.Combine(_webHostEnvironment.WebRootPath, "Obrazy");
+
+                if (!Directory.Exists(uploadPath))
+                {
+                    Directory.CreateDirectory(uploadPath);
+                }
+
+                string filePath = Path.Combine(uploadPath, fileName);
+
+                
+                using (var fileStream = new FileStream(filePath, FileMode.Create))
+                {
+                    await lista.Obraz.CopyToAsync(fileStream);
+                }
+
+               
                 var listaObj = new Lista
                 {
                     Tytul = lista.Tytul,
                     Opis = lista.Opis,
                     Cena = lista.Cena,
                     IdUzytkownika = idUzytkownika,
-                    Obraz = nazwaPliku
+                    Obraz = fileName
                 };
+
                 await _uslugaListy.Add(listaObj);
                 return RedirectToAction("Index");
             }
+
             return View(lista);
         }
 
