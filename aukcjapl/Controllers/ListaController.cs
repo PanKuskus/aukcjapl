@@ -235,7 +235,51 @@ namespace aukcjapl.Controllers
             return View("Details", lista);
         }
 
-        public async Task<ActionResult> AddComment([Bind("Id, Tekst, IdListy, IdUzytkownika")] Komentarz komentarz)
+
+        [HttpPost]
+        [ValidateAntiForgeryToken] // Protects against CSRF
+        public async Task<IActionResult> AddComment(string tekst, int? idListy)
+        {
+            // Ensure the user is authenticated
+            if (!User.Identity.IsAuthenticated)
+            {
+                return Forbid();
+            }
+
+            // Server-side assignment of user ID to prevent spoofing
+            var userId = _userManager.GetUserId(User);
+
+            // Build the comment object
+            var komentarz = new Komentarz
+            {
+                Tekst = tekst,
+                IdUzytkownika = userId,
+                IdListy = idListy
+            };
+
+            // Validate model with the fields we actually care about
+            if (string.IsNullOrWhiteSpace(komentarz.Tekst))
+            {
+                ModelState.AddModelError(nameof(komentarz.Tekst), "Komentarz nie może być pusty.");
+            }
+            if (!komentarz.IdListy.HasValue)
+            {
+                ModelState.AddModelError(nameof(komentarz.IdListy), "Nieprawidłowy IdListy.");
+            }
+
+            if (ModelState.IsValid)
+            {
+                await _uslugaKomentarz.Add(komentarz);
+            }
+
+            // Retrieve the associated item and return the details view
+            var lista = await _uslugaListy.GetById(komentarz.IdListy);
+            return View("Details", lista);
+        }
+    
+
+/*
+public async Task<ActionResult> AddComment([Bind("Id, Tekst, IdListy, IdUzytkownika")] Komentarz komentarz)
         {
             if(ModelState.IsValid)
             {
@@ -245,6 +289,7 @@ namespace aukcjapl.Controllers
             var lista = await _uslugaListy.GetById(komentarz.IdListy);
             return View("Details", lista);
         }
+*/
        /*
        
        // GET: Lista/Edit/5

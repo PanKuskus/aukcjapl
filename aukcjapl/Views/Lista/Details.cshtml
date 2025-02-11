@@ -94,11 +94,20 @@
 {
     <div class="container">
         <form asp-action="AddComment" method="post">
+            @Html.AntiForgeryToken()
+
             <h6>Dodaj komentarz</h6>
-            <textarea class="form-control" aria-label="With textarea" name="Tekst" style="width: 40%; vertical-align:top;"></textarea>
-            <input type="hidden" name="IdUzytkownika" class="form-control" value="@userManager.GetUserId(User)" />
-            <input type="hidden" name="IdListy" class="form-control" value="@Model.Id" />
-            <input type="submit" class="btn btn-primary" style="display: inline-block; margin-top:10px;">
+            <textarea class="form-control"
+                      aria-label="Wpisz treść komentarza"
+                      name="tekst"
+                      style="width: 40%; vertical-align: top;"></textarea>
+
+            <!-- Only post the ID of the listing -->
+            <input type="hidden" name="idListy" value="@Model.Id" />
+
+            <button type="submit" class="btn btn-primary" style="margin-top: 10px;">
+                Dodaj
+            </button>
         </form>
     </div>
 }
@@ -106,17 +115,35 @@ else
 {
     <div class="container">
         <h6>Dodaj komentarz</h6>
-        <textarea class="form-control" aria-label="With textarea" name="Content" style="width: 40%; vertical-align:top;"></textarea>
-        <input type="submit" disabled class="btn btn-primary" style="display: inline-block; margin-top:10px;">
+        <textarea class="form-control"
+                  aria-label="Wpisz treść komentarza"
+                  name="Content"
+                  style="width: 40%; vertical-align: top;"></textarea>
+        <button disabled class="btn btn-primary" style="margin-top:10px;">
+            Zaloguj się aby dodać komentarz
+        </button>
     </div>
 }
-<br>
+
+<br />
 <div class="container">
     <h6>Komentarze</h6>
     @foreach (var komentarz in Model.Komentarz)
     {
+        <!--
+           Razor automatically encodes the output, so
+        @komentarz.Tekst is HTML-encoded by default.
+        -->
         <div style="border:1px solid lightgray; margin: 10px; padding: 10px; border-radius: 10px; width: 40%;">
-            <p>@komentarz.Tekst - @komentarz.Uzytkownik.</p>
+            <p>
+                @komentarz.Tekst
+                -
+                @(komentarz.Uzytkownik == null
+                    ? "Nieznany"
+                    : komentarz.Uzytkownik.UserName)
+            </p>
         </div>
     }
 </div>
+
+
