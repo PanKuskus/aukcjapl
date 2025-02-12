@@ -17,12 +17,12 @@ using System.Security.Claims;
 using System.Security.Cryptography;
 using Microsoft.AspNetCore.Identity;
 using System.Collections;
-
+using Microsoft.AspNetCore.Authorization;
 
 
 namespace aukcjapl.Controllers
 {
-    
+
     public class ListaController : Controller
     {
         private readonly UserManager<IdentityUser> _userManager;
@@ -54,14 +54,14 @@ namespace aukcjapl.Controllers
             return View(await PaginatedList<Lista>.CreateAsync(applicationDbContext.Where(l => l.Sprzedane == false).AsNoTracking(), pageNumber ?? 1, pageSize));
         }
 
-
+        [Authorize]
         public async Task<IActionResult> MyListings(int? pageNumber)
         {
             var applicationDbContext = _uslugaListy.GetAll();
             int pageSize = 5;
             return View("Index", await PaginatedList<Lista>.CreateAsync(applicationDbContext.Where(l => l.IdUzytkownika == User.FindFirstValue(ClaimTypes.NameIdentifier)).AsNoTracking(), pageNumber ?? 1, pageSize));
         }
-
+        [Authorize]
         public async Task<IActionResult> MyBids(int? pageNumber)
         {
             var applicationDbContext = _uslugaOferta.GetAll();
@@ -89,6 +89,7 @@ namespace aukcjapl.Controllers
         }
 
         // GET: Lista/Create
+        [Authorize]
         public async Task<IActionResult> Create()
         {
             return View(new ListaVM());
@@ -99,6 +100,7 @@ namespace aukcjapl.Controllers
         // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
+        [Authorize]
         public async Task<IActionResult> Create(ListaVM lista)
         {
             if (lista.Obraz != null)
@@ -109,7 +111,7 @@ namespace aukcjapl.Controllers
                     return Unauthorized(); // Jeśli użytkownik nie jest zalogowany
                 }
 
-               
+
                 var allowedExtensions = new[] { ".jpg", ".jpeg", ".png", ".gif", ".webp" };
                 var extension = Path.GetExtension(lista.Obraz.FileName).ToLower();
 
@@ -125,7 +127,7 @@ namespace aukcjapl.Controllers
                     return View(lista);
                 }
 
-                
+
                 string fileName = $"{Guid.NewGuid()}{extension}";
                 string uploadPath = Path.Combine(_webHostEnvironment.WebRootPath, "Obrazy");
 
@@ -136,13 +138,13 @@ namespace aukcjapl.Controllers
 
                 string filePath = Path.Combine(uploadPath, fileName);
 
-                
+
                 using (var fileStream = new FileStream(filePath, FileMode.Create))
                 {
                     await lista.Obraz.CopyToAsync(fileStream);
                 }
 
-               
+
                 var listaObj = new Lista
                 {
                     Tytul = lista.Tytul,
@@ -162,11 +164,15 @@ namespace aukcjapl.Controllers
 
 
         [HttpPost]
+        [Authorize]
         public async Task<ActionResult> AddBid(int idListy, double cena)
         {
             // pobieranie ID uzytkownika z kontekstu
             var userId = _userManager.GetUserId(User);
-
+            if (userId == null)
+            {
+                return Unauthorized(); // Jeśli użytkownik nie jest zalogowany
+            }
             var oferta = new Oferta
             {
                 Cena = cena,
@@ -182,14 +188,14 @@ namespace aukcjapl.Controllers
                 return NotFound();
             }
 
-            
+
 
             // czy oferta nie jest niższa niż obecna cena
             if (oferta.Cena <= lista.Cena)
             {
-                
+
                 ModelState.AddModelError(nameof(oferta.Cena), "Cena nie może być niższa niż aktualna cena.");
-                
+
                 return View("Details", lista);
             }
 
@@ -197,7 +203,7 @@ namespace aukcjapl.Controllers
             // walidacja modelu oferta
             if (!TryValidateModel(oferta))
             {
-                
+
                 return BadRequest(ModelState);
             }
 
@@ -227,6 +233,7 @@ namespace aukcjapl.Controllers
             return View("Details", lista);
         }
         */
+        [Authorize]
         public async Task<ActionResult> CloseBidding(int id)
         {
             var lista = await _uslugaListy.GetById(id);
@@ -238,17 +245,18 @@ namespace aukcjapl.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken] // Protects against CSRF
+        [Authorize]
         public async Task<IActionResult> AddComment(string tekst, int? idListy)
         {
-            // Ensure the user is authenticated
-            if (!User.Identity.IsAuthenticated)
-            {
-                return Forbid();
-            }
+          
 
             // Server-side assignment of user ID to prevent spoofing
             var userId = _userManager.GetUserId(User);
 
+            if (userId == null)
+            {
+                return Unauthorized(); // Jeśli użytkownik nie jest zalogowany
+            }
             // Build the comment object
             var komentarz = new Komentarz
             {
